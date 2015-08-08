@@ -121,4 +121,24 @@ describe("Collection", () => {
             expect(redisMock.zremAsync.withArgs("users:ids", id).calledOnce).to.eql(true);
         });
     });
+
+    describe("Find", () => {
+        var existingUser = null;
+
+        beforeEach(() => {
+            existingUser = {
+                id: 1,
+                name: "Jane Doe",
+                email: "jane@gmail.com",
+                password: "secret"
+            };
+        });
+
+        it("should find a doc by id", async () => {
+            var id = 1;
+            redisMock.getAsync.withArgs("users:1").resolves(existingUser);
+            var user = await collection.find(usersSchema, redisMock, { id: id });
+            expect(user).to.eql(existingUser);
+        });
+    });
 });

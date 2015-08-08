@@ -93,7 +93,9 @@ var remove = async (schema, redis, id) => {
 }
 
 var find = async (schema, redis, query) => {
-
+    var id  = query.id;
+    var key = documentKey(schema, id);
+    return await redis.getAsync(key);
 }
 
 export default {
