@@ -14,30 +14,39 @@ chai.use(cap);
 var expect = chai.expect;
 
 describe("Collection", () => {
+    var usersSchema = null;
+    var redisMock = null;
+
+    beforeEach(() => {
+        usersSchema = {
+            name: "users",
+            fields: {
+                id: "autoincrement",
+                name: String,
+                email: { type: String, required: true },
+                password: { type: String, required: true }
+            },
+            indexes: ["email"]
+        };
+
+        redisMock = {
+            incrAsync: sinon.stub(),
+            getAsync: sinon.stub(),
+            setAsync: sinon.stub(),
+            zaddAsync: sinon.stub(),
+            watchAsync: sinon.stub(),
+            multiAsync: sinon.stub(),
+            execAsync: sinon.stub(),
+            delAsync: sinon.stub(),
+            zremAsync: sinon.stub()
+        };
+    });
+
     describe("Create", () => {
-        var usersSchema = null;
-        var redisMock = null;
         var user = null;
         var encodedUserWithId = null;
 
         beforeEach(() => {
-            usersSchema = {
-                name: "users",
-                fields: {
-                    id: "autoincrement",
-                    name: String,
-                    email: { type: String, required: true },
-                    password: { type: String, required: true }
-                },
-                indexes: ["email"]
-            };
-
-            redisMock = {
-                incrAsync: sinon.stub(),
-                setAsync: sinon.stub(),
-                zaddAsync: sinon.stub()
-            };
-
             user = {
                 name: "Jane Doe",
                 email: "jane@gmail.com",
@@ -63,6 +72,53 @@ describe("Collection", () => {
             expect(redisMock.setAsync.calledOnce).to.eql(true);
             expect(redisMock.zaddAsync.calledTwice).to.eql(true);
             expect(redisMock.zaddAsync.withArgs("users:id", 0, id).calledOnce);
+        });
+    });
+
+    describe("Update", () => {
+        var existingUser = null;
+        var updates = null;
+
+        beforeEach(() => {
+            existingUser = {
+                id: 1,
+                name: "Jane Doe",
+                email: "jane@gmail.com",
+                password: "secret"
+            };
+
+            updates = { id: 1, name: "Janet Doe" };
+        });
+
+        it("should update an existing document", async () => {
+            redisMock.watchAsync.resolves();
+            redisMock.getAsync.withArgs("users:1").resolves(existingUser);
+            redisMock.multiAsync.resolves();
+            redisMock.setAsync.withArgs("users:1", r.merge(existingUser, updates)).resolves();
+            redisMock.execAsync.resolves();
+
+            var updatedUser = await collection.update(usersSchema, redisMock, updates);
+            expect(updatedUser).to.eql(r.merge(existingUser, updates));
+
+            expect(redisMock.watchAsync.calledOnce).to.eql(true);
+            expect(redisMock.getAsync.withArgs("users:1").calledOnce).to.eql(true);
+            expect(redisMock.multiAsync.calledOnce).to.eql(true);
+            expect(redisMock.setAsync.withArgs("users:1", r.merge(existingUser, updates)).calledOnce).to.eql(true);
+            expect(redisMock.execAsync.calledOnce).to.eql(true);
+        });
+    });
+
+    describe("Remove", () => {
+        it ("should remove a doc", async () => {
+            var id = 1;
+            redisMock.delAsync.withArgs("users:1").resolves(1);
+            redisMock.zremAsync.withArgs("users:ids", id).resolves(1);
+            var removeCounts = await collection.remove(usersSchema, redisMock, id);
+
+            expect(removeCounts.removedDocs).to.eql(1);
+            expect(removeCounts.removedIds).to.eql(1);
+            expect(redisMock.delAsync.withArgs("users:1").calledOnce).to.eql(true);
+            expect(redisMock.zremAsync.withArgs("users:ids", id).calledOnce).to.eql(true);
         });
     });
 });

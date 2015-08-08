@@ -25,6 +25,7 @@
   "dependencies": {
     "redis": "~0.12.1",
     "ramda": "~0.14.0",
-    "bluebird": "~2.9.27"
+    "bluebird": "~2.9.27",
+    "merge": "~1.2.0"
   }
 }

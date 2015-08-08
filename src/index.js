@@ -1,5 +1,9 @@
 import Promise from "bluebird";
+import merge   from "merge";
 import r       from "ramda";
+
+// Todo: allow for encodings like Message Pack
+var encode = JSON.stringify;
 
 var seqKey = (schema) => {
     return `${schema.name}_seq`;
@@ -31,9 +35,6 @@ var create = async (schema, redis, data) => {
     
     validate(schema, data);
 
-    // Todo: allow for encodings like Message Pack
-    var encode = JSON.stringify;
-
     var seq   = seqKey(schema);
     var id    = await redis.incrAsync(seq);
     var doc   = r.merge(r.clone(data), { id: id });
@@ -56,11 +57,39 @@ var create = async (schema, redis, data) => {
 }
 
 var update = async (schema, redis, data) => {
+    validate(schema, data);
 
+    // Todo: we need an id to update. throw an exception if there isn't one
+    var id  = data.id;
+    var key = documentKey(schema, id);
+
+    await redis.watchAsync();
+    var existingDoc = await redis.getAsync(key);
+    var updatedDoc = merge.recursive(existingDoc, data);
+    await redis.multiAsync();
+    await redis.setAsync(key, updatedDoc);
+    // Todo: remove data from secondary indexes
+    var resp = await redis.execAsync();
+
+    // Todo: handle null string response from EXEC (i.e. the watch failed)
+
+    // Todo: add updated data to secondary indexes
+
+    return updatedDoc;
 }
 
-var remove = async (schema, redis, data) => {
+var remove = async (schema, redis, id) => {
+    var key   = documentKey(schema, id);
+    var idIdx = idIndexKey(schema);
+    var docCount = await redis.delAsync(key);
+    var idxCount = await redis.zremAsync(idIdx, id);
 
+    // Todo: remove secondary indexes
+
+    return {
+        removedDocs: docCount,
+        removedIds: idxCount
+    };
 }
 
 var find = async (schema, redis, query) => {
@@ -71,5 +100,6 @@ export default {
     isValid: validate,
     create: create,
     update: update,
-    find: find
+    find: find,
+    remove: remove
 }
