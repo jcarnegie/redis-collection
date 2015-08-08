@@ -1,0 +1,30 @@
+{
+  "name": "redis-collection",
+  "version": "0.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "~3.0.0",
+    "sinon": "~1.14.1",
+    "mocha": "~2.2.5",
+    "chai-as-promised": "~5.1.0",
+    "gulp": "~3.9.0",
+    "babel": "~5.8.21",
+    "gulp-sourcemaps": "~1.5.2",
+    "gulp-watch": "~4.2.4",
+    "ansi-regex": "~1.1.1",
+    "gulp-mocha": "~2.1.3",
+    "gulp-babel": "~5.2.0",
+    "sinon-as-promised": "~4.0.0"
+  },
+  "dependencies": {
+    "redis": "~0.12.1",
+    "ramda": "~0.14.0",
+    "bluebird": "~2.9.27"
+  }
+}
