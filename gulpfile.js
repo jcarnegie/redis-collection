@@ -5,10 +5,7 @@ var watch      = require("gulp-watch");
 var mocha      = require("gulp-mocha");
 
 // since our tests are written in es6/7 and transpiled with babel
-require("babel/register")({
-    // stage: 0,
-    // experimental: true
-});
+require("babel/register");
  
 gulp.task("default", function () {
     return gulp.src("src/**/*.js")
@@ -29,9 +26,13 @@ gulp.task("dev", function () {
 
 gulp.task("test", function() {
     return gulp.src("test/**/*.test.js")
-        // .pipe(sourcemaps.init())
-        // .pipe(babel({ stage: 0 }))
-        // .pipe(sourcemaps.write())
+        .pipe(mocha())
+        .once('error', function (e) { console.log(e.stack); process.exit(1); })
+        .once('end', function () { process.exit(); });
+});
+
+gulp.task("test:live", function() {
+    return gulp.src("test/**/*.test.live.js")
         .pipe(mocha())
         .once('error', function (e) { console.log(e.stack); process.exit(1); })
         .once('end', function () { process.exit(); });

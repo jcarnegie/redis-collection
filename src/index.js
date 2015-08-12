@@ -4,6 +4,7 @@ import r       from "ramda";
 
 // Todo: allow for encodings like Message Pack
 var encode = JSON.stringify;
+var decode = JSON.parse;
 
 var seqKey = (schema) => {
     return `${schema.name}_seq`;
@@ -57,25 +58,29 @@ var create = async (schema, redis, data) => {
 }
 
 var update = async (schema, redis, data) => {
-    validate(schema, data);
+    try {
+        validate(schema, data);
 
-    // Todo: we need an id to update. throw an exception if there isn't one
-    var id  = data.id;
-    var key = documentKey(schema, id);
+        // Todo: we need an id to update. throw an exception if there isn't one
+        var id  = data.id;
+        var key = documentKey(schema, id);
 
-    await redis.watchAsync();
-    var existingDoc = await redis.getAsync(key);
-    var updatedDoc = merge.recursive(existingDoc, data);
-    await redis.multiAsync();
-    await redis.setAsync(key, updatedDoc);
-    // Todo: remove data from secondary indexes
-    var resp = await redis.execAsync();
+        await redis.watchAsync(key);
+        var existingDoc = await redis.getAsync(key);
+        var updatedDoc = merge.recursive(existingDoc, data);
+        await Promise.promisifyAll(redis.multi())
+            .set(key, encode(updatedDoc))
+            // Todo: remove data from secondary indexes
+            .execAsync()
 
-    // Todo: handle null string response from EXEC (i.e. the watch failed)
+        // Todo: handle null string response from EXEC (i.e. the watch failed)
 
-    // Todo: add updated data to secondary indexes
-
-    return updatedDoc;
+        // Todo: add updated data to secondary indexes
+        return updatedDoc;
+    } catch(e) {
+        console.error(e.stack);
+        throw(e);
+    }
 }
 
 var remove = async (schema, redis, id) => {
