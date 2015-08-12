@@ -16,6 +16,7 @@ var expect = chai.expect;
 describe("Collection", () => {
     var usersSchema = null;
     var redisMock = null;
+    var multiMock = null;
 
     beforeEach(() => {
         usersSchema = {
@@ -30,16 +31,21 @@ describe("Collection", () => {
         };
 
         redisMock = {
+            // async methods
             incrAsync: sinon.stub(),
             getAsync: sinon.stub(),
             setAsync: sinon.stub(),
             zaddAsync: sinon.stub(),
             watchAsync: sinon.stub(),
-            multiAsync: sinon.stub(),
-            execAsync: sinon.stub(),
             delAsync: sinon.stub(),
-            zremAsync: sinon.stub()
+            zremAsync: sinon.stub(),
+            multi: sinon.stub(),
         };
+
+        multiMock = {
+            set: sinon.stub(),
+            execAsync: sinon.stub()
+        }
     });
 
     describe("Create", () => {
@@ -91,20 +97,22 @@ describe("Collection", () => {
         });
 
         it("should update an existing document", async () => {
+            var encodedUpdates = JSON.stringify(r.merge(existingUser, updates));
+
             redisMock.watchAsync.resolves();
             redisMock.getAsync.withArgs("users:1").resolves(existingUser);
-            redisMock.multiAsync.resolves();
-            redisMock.setAsync.withArgs("users:1", r.merge(existingUser, updates)).resolves();
-            redisMock.execAsync.resolves();
+            redisMock.multi.returns(multiMock);
+            multiMock.set.withArgs("users:1", encodedUpdates).returnsThis();
+            multiMock.execAsync.resolves();
 
             var updatedUser = await collection.update(usersSchema, redisMock, updates);
             expect(updatedUser).to.eql(r.merge(existingUser, updates));
 
             expect(redisMock.watchAsync.calledOnce).to.eql(true);
             expect(redisMock.getAsync.withArgs("users:1").calledOnce).to.eql(true);
-            expect(redisMock.multiAsync.calledOnce).to.eql(true);
-            expect(redisMock.setAsync.withArgs("users:1", r.merge(existingUser, updates)).calledOnce).to.eql(true);
-            expect(redisMock.execAsync.calledOnce).to.eql(true);
+            expect(redisMock.multi.calledOnce).to.eql(true);
+            expect(multiMock.set.withArgs("users:1", encodedUpdates).calledOnce).to.eql(true);
+            expect(multiMock.execAsync.calledOnce).to.eql(true);
         });
     });
 

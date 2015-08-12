@@ -71,7 +71,7 @@ var update = async (schema, redis, data) => {
         await Promise.promisifyAll(redis.multi())
             .set(key, encode(updatedDoc))
             // Todo: remove data from secondary indexes
-            .execAsync()
+            .execAsync();
 
         // Todo: handle null string response from EXEC (i.e. the watch failed)
 
