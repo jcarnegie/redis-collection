@@ -36,9 +36,10 @@ describe("Collection", () => {
                 id: "autoincrement",
                 name: String,
                 email: { type: String, required: true },
-                password: { type: String, required: true }
+                password: { type: String, required: true },
+                test: String
             },
-            indexes: ["email"]
+            indexes: ["email", "test"]
         };
 
         newUser = {
@@ -96,5 +97,14 @@ describe("Collection", () => {
         var createdUser = await collection.create(usersSchema, rc, newUser);
         var foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
         expect(foundUsers).to.eql([createdUser]);
+    }));
+
+    it ("should find multiple documents with same secondary index value", asyncTest(async() => {
+        var nu1 = newUser;
+        var nu2 = r.merge(newUser, { name: "Jeffrey Carnegie" });
+        var u1 = await collection.create(usersSchema, rc, nu1);
+        var u2 = await collection.create(usersSchema, rc, nu2);
+        var foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
+        expect(foundUsers).to.eql([u1, u2]);
     }));
 });
