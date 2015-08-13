@@ -27,6 +27,7 @@ var asyncTest = (test) => {
 
 describe("Collection", () => {
     var usersSchema = null;
+    var newUser = null;
 
     beforeEach( async (done) => {
         usersSchema = {
@@ -40,6 +41,13 @@ describe("Collection", () => {
             indexes: ["email"]
         };
 
+        newUser = {
+            email: "jeff@intelostech.com",
+            name: "Jeff Carnegie",
+            password: "password"
+        };
+
+        // reset the database
         await rc.selectAsync(TEST_DATABASE);
         await rc.flushallAsync();
 
@@ -47,12 +55,6 @@ describe("Collection", () => {
     });
 
     it ("should insert a document", asyncTest(async () => {
-        var newUser = {
-            email: "jeff@intelostech.com",
-            name: "Jeff Carnegie",
-            password: "password"
-        };
-
         var storedUser = r.merge(newUser, {id: 1});
 
         var createdUser = await collection.create(usersSchema, rc, newUser);
@@ -64,12 +66,6 @@ describe("Collection", () => {
     }));
 
     it ("should update a document", asyncTest(async () => {
-        var newUser = {
-            email: "jeff@intelostech.com",
-            name: "Jeff Carnegie",
-            password: "password"
-        };
-
         var createdUser = await collection.create(usersSchema, rc, newUser);
         createdUser.name = "Jeffrey Carnegie";
 
@@ -78,5 +74,27 @@ describe("Collection", () => {
 
         var redisUser = await rc.getAsync("users:1");
         expect(JSON.parse(redisUser)).to.eql(updatedUser);
+    }));
+
+    it ("should remove a document", asyncTest(async () => {
+        var createdUser = await collection.create(usersSchema, rc, newUser);
+        var removeData = await collection.remove(usersSchema, rc, createdUser.id);
+
+        expect(removeData).to.eql({ removedDocs: 1, removedIds: 1 });
+
+        var redisUser = await rc.getAsync("users:1");
+        expect(redisUser).to.eql(null);
+    }));
+
+    it ("should find a document by id", asyncTest(async () => {
+        var createdUser = await collection.create(usersSchema, rc, newUser);
+        var foundUser = await collection.find(usersSchema, rc, createdUser.id);
+        expect(foundUser).to.eql(createdUser);
+    }));
+
+    it ("should find a document by secondary index", asyncTest(async () => {
+        var createdUser = await collection.create(usersSchema, rc, newUser);
+        var foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
+        expect(foundUsers).to.eql([createdUser]);
     }));
 });

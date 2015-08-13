@@ -10,9 +10,9 @@ var seqKey = (schema) => {
     return `${schema.name}_seq`;
 }
 
-var documentKey = (schema, id) => {
+var documentKey = r.curry((schema, id) => {
     return `${schema.name}:${id}`;
-}
+});
 
 var idIndexKey = (schema) => {
     return `${schema.name}:ids`;
@@ -90,23 +90,52 @@ var remove = async (schema, redis, id) => {
     var idxCount = await redis.zremAsync(idIdx, id);
 
     // Todo: remove secondary indexes
-
+    
     return {
         removedDocs: docCount,
         removedIds: idxCount
     };
 }
 
-var find = async (schema, redis, query) => {
-    var id  = query.id;
+var find = async (schema, redis, id) => {
     var key = documentKey(schema, id);
-    return await redis.getAsync(key);
+    var doc = await redis.getAsync(key);
+    return decode(doc);
+}
+
+var all = async (schema, redis, query) => {
+    var offset = query.offset || 0;
+    var count  = query.count || 20;
+
+    delete query["offset"];
+    delete query["count"];
+
+    var data = await * r.map((field) => {
+        var idxKey = fieldIndexKey(schema, field);
+        var value = query[field];
+        return redis.zrangebylexAsync(idxKey, `[${value}:`, `[${value}:\xff`);
+    }, r.keys(query));
+
+    // 1. map over items (data)
+    // 2. split each one by ":", take the part last
+    // 3. make the key for each one
+    var valueIdToDocKey = r.compose(
+        documentKey(schema),
+        r.last,
+        r.split(":")
+    );
+
+    var keys = r.map(valueIdToDocKey, r.flatten(data));
+    var docs = await redis.mgetAsync(keys);
+    return r.map(decode, docs);
 }
 
 export default {
     isValid: validate,
     create: create,
     update: update,
+    remove: remove,
     find: find,
-    remove: remove
+    all: all
+    
 }

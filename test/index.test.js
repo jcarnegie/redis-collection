@@ -145,7 +145,7 @@ describe("Collection", () => {
         it("should find a doc by id", async () => {
             var id = 1;
             redisMock.getAsync.withArgs("users:1").resolves(existingUser);
-            var user = await collection.find(usersSchema, redisMock, { id: id });
+            var user = await collection.find(usersSchema, redisMock, id);
             expect(user).to.eql(existingUser);
         });
     });
