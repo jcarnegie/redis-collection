@@ -68,14 +68,30 @@ var update = async (schema, redis, data) => {
         await redis.watchAsync(key);
         var existingDoc = await redis.getAsync(key);
         var updatedDoc = merge.recursive(existingDoc, data);
-        await Promise.promisifyAll(redis.multi())
-            .set(key, encode(updatedDoc))
-            // Todo: remove data from secondary indexes
-            .execAsync();
+        var multi = Promise.promisifyAll(redis.multi())
+            .set(key, encode(updatedDoc));
+
+        // update secondary indexes        
+        r.map((field) => {
+            // no need to update indexes if value didn't change
+            if (existingDoc[field] === updatedDoc[field]) return;
+            var key = fieldIndexKey(schema, field);
+            var oldVal = `${existingDoc[field]}:${id}`;
+            var newVal = `${updatedDoc[field]}:${id}`;
+
+            // remove old data from secondary indexes
+            multi = multi.zrem(key, oldVal)
+            // add updated data to secondary indexes
+                .zadd(key, 0, newVal);
+
+        }, schema.indexes || [])
+
+        // execute multi pipeline            
+        await multi.execAsync();
 
         // Todo: handle null string response from EXEC (i.e. the watch failed)
 
-        // Todo: add updated data to secondary indexes
+        
         return updatedDoc;
     } catch(e) {
         console.error(e.stack);

@@ -93,18 +93,24 @@ describe("Collection", () => {
         expect(foundUser).to.eql(createdUser);
     }));
 
-    it ("should find a document by secondary index", asyncTest(async () => {
-        var createdUser = await collection.create(usersSchema, rc, newUser);
-        var foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
-        expect(foundUsers).to.eql([createdUser]);
-    }));
+    describe("Secondary Indexes", () => {
+        it ("should find a document by secondary index", asyncTest(async () => {
+            var createdUser = await collection.create(usersSchema, rc, newUser);
+            var foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
+            expect(foundUsers).to.eql([createdUser]);
+        }));
 
-    it ("should find multiple documents with same secondary index value", asyncTest(async() => {
-        var nu1 = newUser;
-        var nu2 = r.merge(newUser, { name: "Jeffrey Carnegie" });
-        var u1 = await collection.create(usersSchema, rc, nu1);
-        var u2 = await collection.create(usersSchema, rc, nu2);
-        var foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
-        expect(foundUsers).to.eql([u1, u2]);
-    }));
+        it ("should find multiple documents with same secondary index value", asyncTest(async() => {
+            var nu1 = newUser;
+            var nu2 = r.merge(newUser, { name: "Jeffrey Carnegie" });
+            var u1 = await collection.create(usersSchema, rc, nu1);
+            var u2 = await collection.create(usersSchema, rc, nu2);
+            var foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
+            expect(foundUsers).to.eql([u1, u2]);
+        }));
+
+        it ("should update an index when an indexed field is updated", async () => {
+            
+        });
+    });
 });
