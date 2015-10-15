@@ -85,33 +85,12 @@ var find = async (schema, redis, id) => {
 }
 
 var all = async (schema, redis, query) => {
-    // var offset = query.offset || 0;
-    // var count  = query.count || 20;
-    var data = null;
-    var valueIdToDocKey = null;
-    var keys = null;
-    var docs = null;
+    var file = path.join(__dirname, "all.lua");
+    var script = fs.readFileSync(file, "utf8");
+    var encodedSchema = encode(schema);
+    var encodedData = encode(query);
+    var docs = await redis.evalAsync(script, 0, encodedSchema, encodedData);
 
-    delete query.offset;
-    delete query.count;
-
-    data = await * r.map((field) => {
-        var idxKey = fieldIndexKey(schema, field);
-        var value = query[field];
-        return redis.zrangebylexAsync(idxKey, `[${value}:`, `[${value}:\xff`);
-    }, r.keys(query));
-
-    // 1. map over items (data)
-    // 2. split each one by ":", take the part last
-    // 3. make the key for each one
-    valueIdToDocKey = r.compose(
-        documentKey(schema),
-        r.last,
-        r.split(":")
-    );
-
-    keys = r.map(valueIdToDocKey, r.flatten(data));
-    docs = await redis.mgetAsync(keys);
     return r.map(decode, docs);
 }
 
@@ -122,5 +101,4 @@ export default {
     remove: remove,
     find: find,
     all: all
-
 }
