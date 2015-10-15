@@ -6,12 +6,12 @@ import cap from "chai-as-promised";
 import sap from "sinon-as-promised";
 import r from "ramda";
 
+var expect = chai.expect;
+
 // use bluebird promises with sinon-as-promised
 sap(Promise);
 
 chai.use(cap);
-
-var expect = chai.expect;
 
 describe("Collection", () => {
     var usersSchema = null;

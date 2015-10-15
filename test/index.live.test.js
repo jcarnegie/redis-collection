@@ -1,13 +1,14 @@
+/* global require process console */
+
+import "babel/polyfill";
 import collection from "../src/index";
 import chai from "chai";
-import sinon from "sinon";
+// import sinon from "sinon";
 import Promise from "bluebird";
 import redis from "redis";
 import r from "ramda";
 
 const TEST_DATABASE = 15;
-
-Promise.promisifyAll(redis);
 
 var expect = chai.expect;
 var rc = redis.createClient();
@@ -18,11 +19,14 @@ var asyncTest = (test) => {
             await test();
             done();
         } catch (e) {
-            console.error(e.stack);
+            console.error(e.stack);  // eslint-disable-line no-console
             done(e);
         }
     }
 }
+
+Promise.promisifyAll(redis);
+
 
 
 describe("Collection", () => {
@@ -56,34 +60,43 @@ describe("Collection", () => {
     });
 
     it ("should insert a document", asyncTest(async () => {
-        var storedUser = r.merge(newUser, {id: 1});
+        var storedUser = null,
+            createdUser = null,
+            redisUser = null;
 
-        var createdUser = await collection.create(usersSchema, rc, newUser);
+        storedUser = r.merge(newUser, {id: 1});
+
+        createdUser = await collection.create(usersSchema, rc, newUser);
         expect(createdUser).to.eql(storedUser);
 
         // double check
-        var redisUser = await rc.getAsync("users:1");
+        redisUser = await rc.getAsync("users:1");
         expect(JSON.parse(redisUser)).to.eql(storedUser);
     }));
 
     it ("should update a document", asyncTest(async () => {
-        var createdUser = await collection.create(usersSchema, rc, newUser);
+        var createdUser = null;
+        var updatedUser = null;
+        var redisUser   = null;
+
+        createdUser = await collection.create(usersSchema, rc, newUser);
         createdUser.name = "Jeffrey Carnegie";
 
-        var updatedUser = await collection.update(usersSchema, rc, createdUser);
+        updatedUser = await collection.update(usersSchema, rc, createdUser);
         expect(updatedUser).to.eql(createdUser);
 
-        var redisUser = await rc.getAsync("users:1");
+        redisUser = await rc.getAsync("users:1");
         expect(JSON.parse(redisUser)).to.eql(updatedUser);
     }));
 
     it ("should remove a document", asyncTest(async () => {
         var createdUser = await collection.create(usersSchema, rc, newUser);
         var removeData = await collection.remove(usersSchema, rc, createdUser.id);
+        var redisUser = null;
 
         expect(removeData).to.eql({ removedDocs: 1, removedIds: 1 });
 
-        var redisUser = await rc.getAsync("users:1");
+        redisUser = await rc.getAsync("users:1");
         expect(redisUser).to.eql(null);
     }));
 
@@ -110,7 +123,7 @@ describe("Collection", () => {
         }));
 
         it ("should update an index when an indexed field is updated", async () => {
-            
+
         });
     });
 });

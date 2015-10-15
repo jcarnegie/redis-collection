@@ -1,0 +1,1 @@
+redis-cli --eval src/create.lua , '{"name":"users","fields":{"id":"autoincrement","email":{"required":true},"password":{"required":true}},"indexes":["email","test"]}' '{"email":"jeff@intelostech.com","name":"Jeff Carnegie","password":"password"}'
