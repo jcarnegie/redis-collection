@@ -22,10 +22,6 @@ var idIndexKey = (schema) => {
     return `${schema.name}:ids`;
 }
 
-var fieldIndexKey = (schema, field) => {
-    return `${schema.name}:${field}:idx`;
-}
-
 var validate = (schema, data) => {
     var s = schema;
     var d = data;

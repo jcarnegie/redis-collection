@@ -21,10 +21,6 @@ local tprint = function(tbl, indent)
     end
 end
 
-redis.log(redis.LOG_WARNING, "hi zuliat!")
-redis.log(redis.LOG_WARNING, ARGV[2])
-redis.log(redis.LOG_WARNING, query)
-
 local keys = {}
 for field, value in pairs(query) do
     local idxkey =  schema["name"] .. ":" .. field .. ":idx"
@@ -45,8 +41,5 @@ for field, value in pairs(query) do
 end
 
 local docs = redis.call("MGET", unpack(keys))
-
-redis.log(redis.LOG_WARNING, "docs:")
-tprint(docs)
 
 return docs

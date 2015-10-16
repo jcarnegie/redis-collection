@@ -1,3 +1,4 @@
+/* global require process console */
 var gulp       = require("gulp");
 var sourcemaps = require("gulp-sourcemaps");
 var babel      = require("gulp-babel");
@@ -28,17 +29,9 @@ gulp.task("dev", function () {
 gulp.task("test", function() {
     return gulp.src("test/**/*.test.js")
         .pipe(mocha())
-        .once('error', function (e) { console.log(e.stack); process.exit(1); })
+        .once('error', function (e) { console.log(e.stack); process.exit(1); }) // eslint-disable-line no-console
         .once('end', function () { process.exit(); });
 });
-
-gulp.task("test:live", function() {
-    return gulp.src("test/**/*.live.test.js")
-        .pipe(mocha())
-        .once('error', function (e) { console.log(e.stack); process.exit(1); })
-        .once('end', function () { process.exit(); });
-});
-
 gulp.task("lint", function() {
     return gulp.src(["src/**/*.js", "test/**/*.js"])
         .pipe(eslint())

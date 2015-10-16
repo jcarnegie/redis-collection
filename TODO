@@ -1,0 +1,21 @@
+List of items that need to be completed:
+
+- Remove:
+    - Need to remove secondary index data
+    - Decide if we should implement remove in lua or not. We may be able to get away with just pipelining it to the server as an atomic op.
+- Indexing:
+    - For an existing collection, how do we add a new index and then populate the index? Do we block all other ops in order to safely create the index? If so, how long will that take on say a collection with 1M documents? Need to benchmark.
+    - For numeric and date fields, store the data as the score and set the member to the id.
+- All queries:
+    - Implement '$and' queries: i.e. { userActivated: true, createdAt: { $gt, dateYesterdayMidnight }}
+    - Implement $lt, $lte, $gt, $gte
+    - Implement $in
+    - Implement $or
+    - Much Lower priority:
+        - Embedded document queries
+        - Exact array match
+        - Match array element
+        - Match specific element of array
+- Implement EVALSHA
+- Move schema into it's own npm?
+- Implement MessagePack?
