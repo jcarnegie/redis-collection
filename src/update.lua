@@ -1,3 +1,16 @@
+local tprint = function(tbl, indent)
+    if not indent then indent = 0 end
+    for k, v in pairs(tbl) do
+        local formatting = string.rep("  ", indent) .. k .. ": "
+        if type(v) == "table" then
+            redis.log(redis.LOG_WARNING, formatting)
+            tprint(v, indent + 1)
+        else
+            redis.log(redis.LOG_WARNING, formatting .. v)
+        end
+    end
+end
+
 local tableCopy = function(t)
     local copy = {}
     for k, v in pairs(t) do
@@ -27,8 +40,8 @@ local updates     = cjson.decode(ARGV[2])
 local seqKey      = schema.name .. ":seq"
 local idIdx       = schema.name .. ":ids"
 local docKey      = schema.name .. ":" .. updates.id
-local existingDoc = redis.call("GET", docKey)
-local updatedDoc  = tableMerge(cjson.decode(existingDoc), updates)
+local existingDoc = cjson.decode(redis.call("GET", docKey))
+local updatedDoc  = tableMerge(existingDoc, updates)
 
 redis.call("SET", docKey, cjson.encode(updatedDoc))
 
@@ -39,6 +52,9 @@ for i, field in ipairs(schema.indexes) do
         if (existingDoc[field] ~= nil) then
             local oldVal = existingDoc[field] .. ":" .. updates.id
             redis.call("ZREM", key, oldVal)
+        else
+            redis.log(redis.LOG_WARNING, "field " .. field .. " doesn't exist in existing doc")
+            tprint(existingDoc)
         end
 
         if (updatedDoc[field] ~= nil) then

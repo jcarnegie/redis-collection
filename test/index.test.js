@@ -27,8 +27,6 @@ var asyncTest = (test) => {
 
 Promise.promisifyAll(redis);
 
-
-
 describe("Collection", () => {
     var usersSchema = null;
     var newUser = null;
@@ -47,7 +45,7 @@ describe("Collection", () => {
         };
 
         newUser = {
-            email: "jeff@intelostech.com",
+            email: "jeff@intelos.is",
             name: "Jeff Carnegie",
             password: "password"
         };
@@ -123,7 +121,26 @@ describe("Collection", () => {
         }));
 
         it ("should update an index when an indexed field is updated", async () => {
+            var createdUser = null;
+            var updatedUser = null;
+            var redisUser   = null;
+            var oldEmailScore = null;
+            var newEmailScore = null;
 
+            createdUser = await collection.create(usersSchema, rc, newUser);
+            createdUser.email = "jeff.carnegie@gmail.com";
+
+            updatedUser = await collection.update(usersSchema, rc, createdUser);
+            expect(updatedUser).to.eql(createdUser);
+
+            redisUser = await rc.getAsync("users:1");
+            expect(JSON.parse(redisUser)).to.eql(updatedUser);
+
+            oldEmailScore = await rc.zscoreAsync("users:email:idx", `${newUser.email}:1`);
+            newEmailScore = await rc.zscoreAsync("users:email:idx", `${updatedUser.email}:1`);
+
+            expect(oldEmailScore).to.eql(null);
+            expect(newEmailScore).to.eql("0");
         });
     });
 });

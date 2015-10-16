@@ -8,7 +8,7 @@ module.exports = function (wallaby) {
             "src/**/*.lua"
         ],
         // tests: ["test/**/*.test.js"],
-        tests: ["test/index.live.test.js"],
+        tests: ["test/index.test.js"],
         env: { type: "node" },
         compilers: {
             "**/*.js": wallaby.compilers.babel({
