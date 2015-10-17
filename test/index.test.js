@@ -155,13 +155,33 @@ describe("Collection", () => {
             expect(foundUsers).to.eql([]);
         }));
 
-        it ("should find multiple documents with same secondary index value", asyncTest(async() => {
+        it ("should find multiple documents with same secondary index value", asyncTest(async () => {
             var nu1 = newUser;
             var nu2 = r.merge(newUser, { name: "Jeffrey Carnegie" });
             var u1 = await collection.create(usersSchema, rc, nu1);
             var u2 = await collection.create(usersSchema, rc, nu2);
             var foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
             expect(foundUsers).to.eql([u1, u2]);
+        }));
+
+        it ("should find document using $or criteria", asyncTest(async () => {
+
+        }));
+
+        it ("should find document using $gt criteria", asyncTest(async () => {
+
+        }));
+
+        it ("should find document using $gte criteria", asyncTest(async () => {
+
+        }));
+
+        it ("should find document using $lt criteria", asyncTest(async () => {
+
+        }));
+
+        it ("should find document using $lte criteria", asyncTest(async () => {
+
         }));
     });
 });
