@@ -3,7 +3,6 @@
 import "babel/polyfill";
 import collection from "../src/index";
 import chai from "chai";
-// import sinon from "sinon";
 import Promise from "bluebird";
 import redis from "redis";
 import r from "ramda";
@@ -27,8 +26,6 @@ var asyncTest = (test) => {
 
 Promise.promisifyAll(redis);
 
-
-
 describe("Collection", () => {
     var usersSchema = null;
     var newUser = null;
@@ -37,19 +34,20 @@ describe("Collection", () => {
         usersSchema = {
             name: "users",
             fields: {
-                id: "autoincrement",
-                name: String,
-                email: { type: String, required: true },
-                password: { type: String, required: true },
-                test: String
+                id: "integer",
+                name: "string",
+                email: { type: "string", required: true },
+                password: { type: "string", required: true },
+                test: "string"
             },
             indexes: ["email", "test"]
         };
 
         newUser = {
-            email: "jeff@intelostech.com",
+            email: "jeff@intelos.is",
             name: "Jeff Carnegie",
-            password: "password"
+            password: "password",
+            test: "blah"
         };
 
         // reset the database
@@ -74,20 +72,45 @@ describe("Collection", () => {
         expect(JSON.parse(redisUser)).to.eql(storedUser);
     }));
 
-    it ("should update a document", asyncTest(async () => {
-        var createdUser = null;
-        var updatedUser = null;
-        var redisUser   = null;
+    describe("Update", () => {
+        it ("should update a document", asyncTest(async () => {
+            var createdUser = null;
+            var updatedUser = null;
+            var redisUser   = null;
 
-        createdUser = await collection.create(usersSchema, rc, newUser);
-        createdUser.name = "Jeffrey Carnegie";
+            createdUser = await collection.create(usersSchema, rc, newUser);
+            createdUser.name = "Jeffrey Carnegie";
 
-        updatedUser = await collection.update(usersSchema, rc, createdUser);
-        expect(updatedUser).to.eql(createdUser);
+            updatedUser = await collection.update(usersSchema, rc, createdUser);
+            expect(updatedUser).to.eql(createdUser);
 
-        redisUser = await rc.getAsync("users:1");
-        expect(JSON.parse(redisUser)).to.eql(updatedUser);
-    }));
+            redisUser = await rc.getAsync("users:1");
+            expect(JSON.parse(redisUser)).to.eql(updatedUser);
+        }));
+
+        it ("should update an index when an indexed field is updated", async () => {
+            var createdUser = null;
+            var updatedUser = null;
+            var redisUser   = null;
+            var oldEmailScore = null;
+            var newEmailScore = null;
+
+            createdUser = await collection.create(usersSchema, rc, newUser);
+            createdUser.email = "jeff.carnegie@gmail.com";
+
+            updatedUser = await collection.update(usersSchema, rc, createdUser);
+            expect(updatedUser).to.eql(createdUser);
+
+            redisUser = await rc.getAsync("users:1");
+            expect(JSON.parse(redisUser)).to.eql(updatedUser);
+
+            oldEmailScore = await rc.zscoreAsync("users:email:idx", `${newUser.email}:1`);
+            newEmailScore = await rc.zscoreAsync("users:email:idx", `${updatedUser.email}:1`);
+
+            expect(oldEmailScore).to.eql(null);
+            expect(newEmailScore).to.eql("0");
+        });
+    });
 
     it ("should remove a document", asyncTest(async () => {
         var createdUser = await collection.create(usersSchema, rc, newUser);
@@ -106,11 +129,30 @@ describe("Collection", () => {
         expect(foundUser).to.eql(createdUser);
     }));
 
-    describe("Secondary Indexes", () => {
+    describe("All", () => {
         it ("should find a document by secondary index", asyncTest(async () => {
             var createdUser = await collection.create(usersSchema, rc, newUser);
             var foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
             expect(foundUsers).to.eql([createdUser]);
+        }));
+
+        it ("should find documents using a multiple indexes", asyncTest(async () => {
+            var createdUser = await collection.create(usersSchema, rc, newUser);
+            var foundUsers = await collection.all(usersSchema, rc, {
+                email: newUser.email,
+                test: "blah"
+            });
+            expect(foundUsers).to.eql([createdUser]);
+        }));
+
+        it ("should not find documents unless data from all indexes are matched", asyncTest(async () => {
+            var foundUsers = null;
+            await collection.create(usersSchema, rc, newUser);
+            foundUsers = await collection.all(usersSchema, rc, {
+                email: newUser.email,
+                test: "foo"
+            });
+            expect(foundUsers).to.eql([]);
         }));
 
         it ("should find multiple documents with same secondary index value", asyncTest(async() => {
@@ -121,9 +163,5 @@ describe("Collection", () => {
             var foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
             expect(foundUsers).to.eql([u1, u2]);
         }));
-
-        it ("should update an index when an indexed field is updated", async () => {
-
-        });
     });
 });
