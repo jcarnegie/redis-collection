@@ -59,6 +59,9 @@ for i, field in ipairs(schema.indexes) do
 
         if (updatedDoc[field] ~= nil) then
             local newVal = updatedDoc[field] .. ":" .. updates.id
+            -- if (schema.fields[field] == "integer") then
+                -- pad the value with leading zeros
+            -- end
             redis.call("ZADD", key, 0, newVal)
         end
     end

@@ -166,11 +166,30 @@ describe("Collection", () => {
         }));
 
         it ("should find document using $or criteria", asyncTest(async () => {
-
+            // let nu1 = newUser;
+            // let nu2 = r.merge(newUser, {
+            //     email: "zuliat@intelos.is",
+            //     test:  "foo"
+            // });
+            // let u1 = await collection.create(usersSchema, rc, nu1);
+            // let u2 = await collection.create(usersSchema, rc, nu2);
+            // let foundUsers = await collection.all(usersSchema, rc, {
+            //     $or: [{ email: nu1.email }, { test: "foo" }]
+            // });
+            // expect(foundUsers).to.eql([u1, u2]);
         }));
 
         it ("should find document using $gt criteria", asyncTest(async () => {
 
+            // pad with leading zeros:
+            // 00000000001
+            // 00000000011
+
+            // let createdUser = await collection.create(usersSchema, rc, newUser);
+            // let foundUsers = await collection.all(usersSchema, rc, {
+            //     $lt: { createdAt: new Date().getTime() - (300 * 1000) }
+            // });
+            // expect(foundUsers).to.eql([createdUser]);
         }));
 
         it ("should find document using $gte criteria", asyncTest(async () => {

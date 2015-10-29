@@ -16,7 +16,11 @@ for i, field in ipairs(schema.indexes) do
     if fieldVal ~= nil then
         local key = schema.name .. ":" .. field .. ":idx"
         local val = fieldVal .. ":" .. id
-        redis.call("ZADD", key, 0, val)
+        -- if (schema.fields[field] == "integer") then
+        --     redis.call("ZADD", key, fieldVal, val)
+        -- else
+            redis.call("ZADD", key, 0, val)
+        -- end
     end
 end
 
