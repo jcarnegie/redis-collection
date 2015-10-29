@@ -9,10 +9,10 @@ import r from "ramda";
 
 const TEST_DATABASE = 15;
 
-var expect = chai.expect;
-var rc = redis.createClient();
+let expect = chai.expect;
+let rc = redis.createClient();
 
-var asyncTest = (test) => {
+let asyncTest = (test) => {
     return async (done) => {
         try {
             await test();
@@ -21,16 +21,16 @@ var asyncTest = (test) => {
             console.error(e.stack);  // eslint-disable-line no-console
             done(e);
         }
-    }
-}
+    };
+};
 
 Promise.promisifyAll(redis);
 
 describe("Collection", () => {
-    var usersSchema = null;
-    var newUser = null;
+    let usersSchema = null;
+    let newUser = null;
 
-    beforeEach( async (done) => {
+    beforeEach(async (done) => {
         usersSchema = {
             name: "users",
             fields: {
@@ -38,9 +38,10 @@ describe("Collection", () => {
                 name: "string",
                 email: { type: "string", required: true },
                 password: { type: "string", required: true },
-                test: "string"
+                test: "string",
+                createdAt: "integer"
             },
-            indexes: ["email", "test"]
+            indexes: ["email", "test", "createdAt"]
         };
 
         newUser = {
@@ -58,11 +59,11 @@ describe("Collection", () => {
     });
 
     it ("should insert a document", asyncTest(async () => {
-        var storedUser = null,
-            createdUser = null,
-            redisUser = null;
+        let storedUser = null;
+        let createdUser = null;
+        let redisUser = null;
 
-        storedUser = r.merge(newUser, {id: 1});
+        storedUser = r.merge(newUser, { id: 1 });
 
         createdUser = await collection.create(usersSchema, rc, newUser);
         expect(createdUser).to.eql(storedUser);
@@ -74,9 +75,9 @@ describe("Collection", () => {
 
     describe("Update", () => {
         it ("should update a document", asyncTest(async () => {
-            var createdUser = null;
-            var updatedUser = null;
-            var redisUser   = null;
+            let createdUser = null;
+            let updatedUser = null;
+            let redisUser   = null;
 
             createdUser = await collection.create(usersSchema, rc, newUser);
             createdUser.name = "Jeffrey Carnegie";
@@ -89,11 +90,11 @@ describe("Collection", () => {
         }));
 
         it ("should update an index when an indexed field is updated", async () => {
-            var createdUser = null;
-            var updatedUser = null;
-            var redisUser   = null;
-            var oldEmailScore = null;
-            var newEmailScore = null;
+            let createdUser = null;
+            let updatedUser = null;
+            let redisUser   = null;
+            let oldEmailScore = null;
+            let newEmailScore = null;
 
             createdUser = await collection.create(usersSchema, rc, newUser);
             createdUser.email = "jeff.carnegie@gmail.com";
@@ -113,9 +114,9 @@ describe("Collection", () => {
     });
 
     it ("should remove a document", asyncTest(async () => {
-        var createdUser = await collection.create(usersSchema, rc, newUser);
-        var removeData = await collection.remove(usersSchema, rc, createdUser.id);
-        var redisUser = null;
+        let createdUser = await collection.create(usersSchema, rc, newUser);
+        let removeData = await collection.remove(usersSchema, rc, createdUser.id);
+        let redisUser = null;
 
         expect(removeData).to.eql({ removedDocs: 1, removedIds: 1 });
 
@@ -124,21 +125,21 @@ describe("Collection", () => {
     }));
 
     it ("should find a document by id", asyncTest(async () => {
-        var createdUser = await collection.create(usersSchema, rc, newUser);
-        var foundUser = await collection.find(usersSchema, rc, createdUser.id);
+        let createdUser = await collection.create(usersSchema, rc, newUser);
+        let foundUser = await collection.find(usersSchema, rc, createdUser.id);
         expect(foundUser).to.eql(createdUser);
     }));
 
     describe("All", () => {
         it ("should find a document by secondary index", asyncTest(async () => {
-            var createdUser = await collection.create(usersSchema, rc, newUser);
-            var foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
+            let createdUser = await collection.create(usersSchema, rc, newUser);
+            let foundUsers = await collection.all(usersSchema, rc, { email: newUser.email });
             expect(foundUsers).to.eql([createdUser]);
         }));
 
         it ("should find documents using a multiple indexes", asyncTest(async () => {
-            var createdUser = await collection.create(usersSchema, rc, newUser);
-            var foundUsers = await collection.all(usersSchema, rc, {
+            let createdUser = await collection.create(usersSchema, rc, newUser);
+            let foundUsers = await collection.all(usersSchema, rc, {
                 email: newUser.email,
                 test: "blah"
             });
@@ -146,7 +147,7 @@ describe("Collection", () => {
         }));
 
         it ("should not find documents unless data from all indexes are matched", asyncTest(async () => {
-            var foundUsers = null;
+            let foundUsers = null;
             await collection.create(usersSchema, rc, newUser);
             foundUsers = await collection.all(usersSchema, rc, {
                 email: newUser.email,
@@ -156,11 +157,11 @@ describe("Collection", () => {
         }));
 
         it ("should find multiple documents with same secondary index value", asyncTest(async () => {
-            var nu1 = newUser;
-            var nu2 = r.merge(newUser, { name: "Jeffrey Carnegie" });
-            var u1 = await collection.create(usersSchema, rc, nu1);
-            var u2 = await collection.create(usersSchema, rc, nu2);
-            var foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
+            let nu1 = newUser;
+            let nu2 = r.merge(newUser, { name: "Jeffrey Carnegie" });
+            let u1 = await collection.create(usersSchema, rc, nu1);
+            let u2 = await collection.create(usersSchema, rc, nu2);
+            let foundUsers = await collection.all(usersSchema, rc, { email: nu1.email });
             expect(foundUsers).to.eql([u1, u2]);
         }));
 

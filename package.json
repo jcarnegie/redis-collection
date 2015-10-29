@@ -15,7 +15,7 @@
     "chai": "~3.0.0",
     "chai-as-promised": "~5.1.0",
     "eslint": "^1.4.3",
-    "eslint-plugin-react": "^3.4.1",
+    "eslint-plugin-react": "^3.6.3",
     "gulp": "~3.9.0",
     "gulp-babel": "~5.2.0",
     "gulp-babel-istanbul": "^0.10.0",
