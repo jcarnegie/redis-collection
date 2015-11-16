@@ -19,7 +19,7 @@ for i, field in ipairs(schema.indexes) do
         -- if (schema.fields[field] == "integer") then
         --     redis.call("ZADD", key, fieldVal, val)
         -- else
-            redis.call("ZADD", key, 0, val)
+            redis.call("ZADD", key, id, val)
         -- end
     end
 end
